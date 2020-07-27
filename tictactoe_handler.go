@@ -1,9 +1,9 @@
 package tic_tac_toe_example
 
 import (
-	pb "github.com/dangnguyendota/gs-tictactoe-example/ip"
-	"github.com/dangnguyendota/gs-interface/gs_proto"
 	"github.com/dangnguyendota/gs-interface"
+	"github.com/dangnguyendota/gs-interface/gs_proto"
+	pb "github.com/dangnguyendota/gs-tictactoe-example/api"
 	"github.com/gogo/protobuf/proto"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
