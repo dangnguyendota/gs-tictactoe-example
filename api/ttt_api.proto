@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package ttt_api;
+
+message TTT {
+    oneof message {
+        Turn turn = 1;
+        End end = 2;
+        Move move = 3;
+        PlayerMove player_move = 4;
+    }
+}
+
+message Turn {
+    string id = 1;
+    int64 time_left = 2;
+    string digit = 3;
+}
+
+message End {
+    string winner = 1;
+}
+
+message Move {
+    int32 row = 1;
+    int32 col = 2;
+    string digit = 3;
+}
+
+message PlayerMove {
+    string id = 1;
+    int32 row = 2;
+    int32 col = 3;
+    string digit = 4;
+}
