@@ -37,7 +37,7 @@ func NewTicTacToeHandler() *TicTacToeHandler {
 }
 
 func (t *TicTacToeHandler) OnInit(room gsi.Room) {
-	if timeStr, ok := room.MetaData()["time_per_turn"]; ok {
+	if timeStr, ok := room.Metadata()["time_per_turn"]; ok {
 		if timePerMove, err := strconv.ParseInt(timeStr, 10, 64); err != nil {
 			t.timePerMove = timePerMove
 		}
@@ -188,7 +188,7 @@ func (t *TicTacToeHandler) endGame(room gsi.Room, winner string) {
 			Winner: winner,
 		}},
 	})
-	room.CloseRoom()
+	room.Destroy()
 }
 
 func (t *TicTacToeHandler) OnClose(room gsi.Room) {
@@ -229,7 +229,7 @@ func (t *TicTacToeHandler) sendAllRoomMessage(room gsi.Room, evt *pb.TTT) {
 		room.SendAll(&ip.Packet{
 			Message: &ip.Packet_RoomMessage{
 				RoomMessage: &ip.RoomMessage{
-					RoomType: room.Type(),
+					RoomType: room.Game(),
 					RoomId:   room.ID().String(),
 					From:     "server",
 					Data:     data,
@@ -249,7 +249,7 @@ func (t *TicTacToeHandler) sendRoomMessage(room gsi.Room, id uuid.UUID, evt *pb.
 		room.Send(id, &ip.Packet{
 			Message: &ip.Packet_RoomMessage{
 				RoomMessage: &ip.RoomMessage{
-					RoomType: room.Type(),
+					RoomType: room.Game(),
 					RoomId:   room.ID().String(),
 					From:     "server",
 					Data:     data,
