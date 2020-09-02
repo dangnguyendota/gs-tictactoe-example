@@ -34,7 +34,7 @@ func NewTicTacToeHandler() *TicTacToeHandler {
 	}
 }
 
-func (t *TicTacToeHandler) OnInit(room gsi.Room) interface{} {
+func (t *TicTacToeHandler) OnInit(room api.Room) interface{} {
 	if timeStr, ok := room.Metadata()["time_per_turn"]; ok {
 		if timePerMove, err := strconv.ParseInt(timeStr, 10, 64); err != nil {
 			t.timePerMove = timePerMove
@@ -44,24 +44,24 @@ func (t *TicTacToeHandler) OnInit(room gsi.Room) interface{} {
 	return t.board
 }
 
-func (t *TicTacToeHandler) AllowJoin(room gsi.Room, user *gsi.User) *gsi.CheckJoinConditionResult {
-	return &gsi.CheckJoinConditionResult{
+func (t *TicTacToeHandler) AllowJoin(room api.Room, user *api.User) *api.CheckJoinConditionResult {
+	return &api.CheckJoinConditionResult{
 		Allow:  true,
 		Reason: "",
 	}
 }
 
-func (t *TicTacToeHandler) Processor(room gsi.Room, action string, data map[string]interface{}) {
+func (t *TicTacToeHandler) Processor(room api.Room, action string, data map[string]interface{}) {
 	switch action {
 	case "end game":
 		t.endGame(room, data["winner"].(string))
 	}
 }
 
-func (t *TicTacToeHandler) OnJoined(room gsi.Room, user *gsi.User) interface{} {
+func (t *TicTacToeHandler) OnJoined(room api.Room, user *api.User) interface{} {
 	player := &TicTacToePlayer{
-		sid:         user.SID,
-		id:          user.ID,
+		sid:         user.Sid,
+		id:          user.Id,
 		name:        user.Username,
 		avatar:      user.Avatar,
 		displayName: user.DisplayName,
@@ -87,7 +87,7 @@ func (t *TicTacToeHandler) OnJoined(room gsi.Room, user *gsi.User) interface{} {
 			}},
 		})
 		if err := room.Scheduler().Schedule("end game", map[string]interface{}{
-			"winner": t.GetOtherID(user.ID).String(),
+			"winner": t.GetOtherID(user.Id).String(),
 		}, time.Duration(t.timePerMove)*time.Second); err != nil {
 			room.Logger().Error("schedule error", zap.Error(err))
 		}
@@ -96,12 +96,12 @@ func (t *TicTacToeHandler) OnJoined(room gsi.Room, user *gsi.User) interface{} {
 	return t.board
 }
 
-func (t *TicTacToeHandler) OnLeft(room gsi.Room, user *gsi.User) interface{} {
-	t.endGame(room, t.GetOtherID(user.ID).String())
+func (t *TicTacToeHandler) OnLeft(room api.Room, user *api.User) interface{} {
+	t.endGame(room, t.GetOtherID(user.Id).String())
 	return t.board
 }
 
-func (t *TicTacToeHandler) Loop(room gsi.Room, roomChan <-chan *gsi.RoomData) interface{} {
+func (t *TicTacToeHandler) Loop(room api.Room, roomChan <-chan *api.RoomData) interface{} {
 	for {
 		select {
 		case data, ok := <-roomChan:
@@ -115,9 +115,9 @@ func (t *TicTacToeHandler) Loop(room gsi.Room, roomChan <-chan *gsi.RoomData) in
 	}
 }
 
-func (t *TicTacToeHandler) onReceived(room gsi.Room, user *gsi.User, message []byte) {
+func (t *TicTacToeHandler) onReceived(room api.Room, user *api.User, message []byte) {
 	if t.board.end() {
-		room.Dispatcher().SendError(user.SID, 0, "game has finished")
+		room.Dispatcher().SendError(user.Sid, 0, "game has finished")
 		return
 	}
 
@@ -129,20 +129,20 @@ func (t *TicTacToeHandler) onReceived(room gsi.Room, user *gsi.User, message []b
 
 	switch evt.Message.(type) {
 	case *pb.TTT_Move:
-		if t.turn != user.ID {
-			room.Dispatcher().SendError(user.SID, 0, "not your turn")
+		if t.turn != user.Id {
+			room.Dispatcher().SendError(user.Sid, 0, "not your turn")
 			return
 		} else {
 			move := evt.GetMove()
 
 			if end, err := t.board.doMove(move.Row, move.Col, move.Digit); err != nil {
-				room.Dispatcher().SendError(user.SID, 0, err.Error())
+				room.Dispatcher().SendError(user.Sid, 0, err.Error())
 				return
 			} else {
 				room.Scheduler().CancelIfExist("end game")
 				t.sendAllRoomMessage(room, &pb.TTT{
 					Message: &pb.TTT_PlayerMove{PlayerMove: &pb.PlayerMove{
-						Id:    user.ID.String(),
+						Id:    user.Id.String(),
 						Row:   move.Row,
 						Col:   move.Col,
 						Digit: move.Digit,
@@ -150,9 +150,9 @@ func (t *TicTacToeHandler) onReceived(room gsi.Room, user *gsi.User, message []b
 				})
 
 				if end {
-					t.endGame(room, user.ID.String())
+					t.endGame(room, user.Id.String())
 				} else {
-					t.turn = t.GetOtherID(user.ID)
+					t.turn = t.GetOtherID(user.Id)
 					t.sendAllRoomMessage(room, &pb.TTT{
 						Message: &pb.TTT_Turn{Turn: &pb.Turn{
 							Id:       t.turn.String(),
@@ -165,7 +165,7 @@ func (t *TicTacToeHandler) onReceived(room gsi.Room, user *gsi.User, message []b
 						t.endGame(room, "")
 					} else {
 						if err := room.Scheduler().Schedule("end game", map[string]interface{}{
-							"winner": user.ID.String(),
+							"winner": user.Id.String(),
 						}, time.Duration(t.timePerMove)*time.Second); err != nil {
 							room.Logger().Error("schedule error", zap.Error(err))
 						}
@@ -178,7 +178,7 @@ func (t *TicTacToeHandler) onReceived(room gsi.Room, user *gsi.User, message []b
 	}
 }
 
-func (t *TicTacToeHandler) endGame(room gsi.Room, winner string) {
+func (t *TicTacToeHandler) endGame(room api.Room, winner string) {
 	room.Scheduler().CancelAll()
 	t.sendAllRoomMessage(room, &pb.TTT{
 		Message: &pb.TTT_End{End: &pb.End{
@@ -188,7 +188,7 @@ func (t *TicTacToeHandler) endGame(room gsi.Room, winner string) {
 	room.Destroy()
 }
 
-func (t *TicTacToeHandler) OnClose(room gsi.Room) {
+func (t *TicTacToeHandler) OnClose(room api.Room) {
 	room.Scheduler().Stop()
 	room.Pusher().Stop()
 }
@@ -217,7 +217,7 @@ func (t *TicTacToeHandler) GetIDFromSID(sid uuid.UUID) uuid.UUID {
 	return uuid.UUID{}
 }
 
-func (t *TicTacToeHandler) sendAllRoomMessage(room gsi.Room, evt *pb.TTT) {
+func (t *TicTacToeHandler) sendAllRoomMessage(room api.Room, evt *pb.TTT) {
 	if len(room.Players()) == 0 {
 		return
 	}
@@ -230,7 +230,7 @@ func (t *TicTacToeHandler) sendAllRoomMessage(room gsi.Room, evt *pb.TTT) {
 
 }
 
-func (t *TicTacToeHandler) sendRoomMessage(room gsi.Room, id uuid.UUID, evt *pb.TTT) {
+func (t *TicTacToeHandler) sendRoomMessage(room api.Room, id uuid.UUID, evt *pb.TTT) {
 	if data, err := proto.Marshal(evt); err == nil {
 		room.Dispatcher().Send(id, data)
 	} else {
