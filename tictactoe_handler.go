@@ -1,7 +1,7 @@
 package tic_tac_toe_example
 
 import (
-	"github.com/dangnguyendota/gs-interface"
+	"github.com/dangnguyendota/game-server-api"
 	pb "github.com/dangnguyendota/gs-tictactoe-example/api"
 	"github.com/gogo/protobuf/proto"
 	"github.com/google/uuid"
@@ -26,7 +26,7 @@ type TicTacToeHandler struct {
 	board       *TicTacToeBoard
 }
 
-func NewTicTacToeHandler() api.RoomHandler {
+func NewTicTacToeHandler() *TicTacToeHandler {
 	return &TicTacToeHandler{
 		players:     make([]*TicTacToePlayer, 0),
 		timePerMove: 30, // default if config not set
