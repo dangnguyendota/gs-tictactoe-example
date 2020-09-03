@@ -26,7 +26,7 @@ type TicTacToeHandler struct {
 	board       *TicTacToeBoard
 }
 
-func NewTicTacToeHandler() *TicTacToeHandler {
+func NewTicTacToeHandler() api.RoomHandler {
 	return &TicTacToeHandler{
 		players:     make([]*TicTacToePlayer, 0),
 		timePerMove: 30, // default if config not set
