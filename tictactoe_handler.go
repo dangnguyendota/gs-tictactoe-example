@@ -1,6 +1,7 @@
 package tic_tac_toe_example
 
 import (
+	"encoding/json"
 	"github.com/dangnguyendota/game-server-api"
 	pb "github.com/dangnguyendota/gs-tictactoe-example/api"
 	"github.com/gogo/protobuf/proto"
@@ -34,6 +35,14 @@ func NewTicTacToeHandler() *TicTacToeHandler {
 	}
 }
 
+func (t *TicTacToeHandler) OnReload(room api.Room, state string) interface{} {
+	if err := json.Unmarshal([]byte(state), t.board); err != nil {
+		room.Logger().Error("reload room failed", zap.Error(err))
+	}
+
+	return t.board
+}
+
 func (t *TicTacToeHandler) OnInit(room api.Room) interface{} {
 	if timeStr, ok := room.Metadata()["time_per_turn"]; ok {
 		if timePerMove, err := strconv.ParseInt(timeStr, 10, 64); err != nil {
@@ -51,11 +60,13 @@ func (t *TicTacToeHandler) AllowJoin(room api.Room, user *api.User) *api.CheckJo
 	}
 }
 
-func (t *TicTacToeHandler) Processor(room api.Room, action string, data map[string]interface{}) {
+func (t *TicTacToeHandler) Processor(room api.Room, action string, data map[string]interface{}) interface{} {
 	switch action {
 	case "end game":
 		t.endGame(room, data["winner"].(string))
 	}
+
+	return t.board
 }
 
 func (t *TicTacToeHandler) OnJoined(room api.Room, user *api.User) interface{} {
