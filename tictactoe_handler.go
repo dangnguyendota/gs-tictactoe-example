@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"github.com/dangnguyendota/game-server-api"
 	pb "github.com/dangnguyendota/gs-tictactoe-example/api"
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"math/rand"
